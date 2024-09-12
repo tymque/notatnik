@@ -19,7 +19,7 @@ class Database:
             password="",
             database=database_name
         )
-        self.cursor = db.cursor()
+        self.cursor = self.db.cursor()
 
 
 if __name__ == '__main__':
