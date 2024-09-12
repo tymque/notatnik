@@ -1,4 +1,3 @@
-import _mysql_connector
 import mysql.connector
 
 
