@@ -1,3 +1,5 @@
+from os.path import curdir
+
 import mysql.connector
 
 
@@ -19,7 +21,7 @@ class Database:
             password="",
             database=database_name
         )
-        self.cursor = self.db.cursor()
+        self.cursor = self.db.cursor(buffered=True)
 
     def create_database(self):
         self.cursor.execute('''CREATE TABLE IF NOT EXISTS user(
@@ -47,13 +49,50 @@ class Database:
             self.cursor.execute("INSERT INTO user VALUES (NULL, %s, %s)",
                                 (username, password))
             self.db.commit()
-            return True
+            return "success"
+        else:
+            return "username_taken"
+
+    def delete_user(self, user_id):
+        self.cursor.execute(f"DELETE FROM user WHERE id = {user_id}")
+        self.db.commit()
 
     def login(self, username, password):
         self.create_database()
 
         query = self.cursor.execute("SELECT * FROM user WHERE username = %s AND password = %s",
                                     (username, password))
+        return query
+
+    def create_note(self, user_id, content, date):
+        self.create_database()
+
+        self.cursor.execute("INSERT INTO note VALUES (NULL, %s, %s, %s)",
+                            (user_id, content, date))
+        self.db.commit()
+
+    def edit_note(self, note_id, content, date):
+        self.create_database()
+
+        self.cursor.execute("UPDATE note SET content = %s, date = %s WHERE id = %s",
+                            (content, date, note_id))
+        self.db.commit()
+
+    def delete_note(self, note_id):
+        self.cursor.execute(f"DELETE FROM note WHERE id = {note_id}")
+        self.db.commit()
+
+    def select_all_notes(self, user_id):
+        self.create_database()
+
+        query = self.cursor.execute(f"SELECT * FROM note WHERE user_id LIKE '{user_id}'")
+        return query
+
+    def select_notes_by_date(self, user_id, date):
+        self.create_database()
+
+        query = self.cursor.execute("SELECT * FROM note WHERE user_id LIKE '%s' AND date = %s",
+                                    (user_id, date))
         return query
 
 
@@ -63,13 +102,16 @@ if __name__ == '__main__':
     un = "kamil"
     pw = "dda"
 
-    query = baza.create_user(un, pw)
-    if query:
-        print("created")
-    else:
-        print("username taken")
+    # creating account
+    # query_create = baza.create_user(un, pw)
+    # if  query_create == "success":
+    #    print("user created")
+    # elif query_create == "username_taken":
+    #    print("user alredy exists")
 
-    # if baza.login(un, pw):
-    #    print("hooi")
+    # login
+    # q = baza.login(un, pw)
+    # if q is None:
+    #    print("Nie mo")
     # else:
     #    print("logged")
