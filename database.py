@@ -1,24 +1,33 @@
 import mysql.connector
 import time
+from configparser import ConfigParser
+
+config = ConfigParser()
+
+config.read('config.ini')
+database_host = config.get('DATABASE', 'host')
+database_user = config.get('DATABASE', 'user')
+database_password = config.get('DATABASE', 'password')
+database_name = config.get('DATABASE', 'name')
 
 
 class Database:
-    def __init__(self, database_name):
+    def __init__(self, name):
         db = mysql.connector.connect(
-            host="localhost",
-            user="root",
-            password=""
+            host=database_host,
+            user=database_user,
+            password=database_password
         )
         cursor = db.cursor()
-        cursor.execute(f"CREATE DATABASE IF NOT EXISTS {database_name}")
+        cursor.execute(f"CREATE DATABASE IF NOT EXISTS {name}")
         cursor.close()
         db.close()
 
         self.db = mysql.connector.connect(
-            host="localhost",
-            user="root",
-            password="",
-            database=database_name
+            host=database_host,
+            user=database_user,
+            password=database_password,
+            database=name
         )
         self.cursor = self.db.cursor(buffered=True)
 
@@ -96,7 +105,7 @@ class Database:
 
 
 if __name__ == '__main__':
-    Base = Database('notepad')
+    Base = Database(database_name)
 
     user_id = None
     user_username = None
