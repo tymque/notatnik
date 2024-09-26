@@ -11,7 +11,8 @@ root.defaultFont = font.nametofont("TkDefaultFont")
 root.defaultFont.configure(family="Helvetica", size=11)
 
 
-info = ttk.Label(root, text="24.09.2024, 19:15 | 123")
+info = ttk.Label(root, text="24.09.2024, 19:15")
+deleteButton = ttk.Button(root, text="Usuń")
 saveButton = ttk.Button(root, text="Zapisz")
 textBox = tk.Text(root, width=40, font=("Helvetica", 12))
 listBox = tk.Listbox(root)
@@ -19,6 +20,7 @@ for x in range(20):
     listBox.insert("end", x+1)
 
 info.grid(column=0, row=0, pady=0, padx=15, sticky=tk.S)
+deleteButton.grid(column=1, row=0, pady=0, padx=10, sticky=tk.E)
 saveButton.grid(column=2, row=0, pady=0, padx=15, sticky=tk.E)
 textBox.grid(column=0, row=1, columnspan=3, pady=5, padx=15)
 listBox.grid(column=3, row=1, pady=5, padx=5, sticky=tk.N)

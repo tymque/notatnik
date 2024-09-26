@@ -61,8 +61,9 @@ class Database:
         else:
             return "username_taken"
 
-    def delete_user(self, user_id):
-        self.cursor.execute(f"DELETE FROM user WHERE id = {user_id}")
+    def delete_user(self, uid):
+        self.cursor.execute(f"DELETE FROM note WHERE user_id = {uid}")
+        self.cursor.execute(f"DELETE FROM user WHERE id = {uid}")
         self.db.commit()
 
     def login(self, username, password):
