@@ -1,5 +1,6 @@
 import tkinter as tk
 from tkinter import ttk, font
+from tktooltip import ToolTip
 
 
 def on_focus_in(event):
@@ -22,14 +23,19 @@ root.resizable(False, False)
 root.defaultFont = font.nametofont("TkDefaultFont")
 root.defaultFont.configure(family="Helvetica", size=11)
 
-searchIcon = tk.PhotoImage(file=r"search.png")
+searchIcon = tk.PhotoImage(file=r"./icons/search.png")
+saveIcon = tk.PhotoImage(file=r"./icons/save.png")
+deleteIcon = tk.PhotoImage(file=r"./icons/delete.png")
+createIcon = tk.PhotoImage(file=r"./icons/new.png")
+
 font = ("Helvetica", 11)
 font_header = ("Helvetica", 14, "bold")
 font_placeholder = ("Helvetica", 11, "italic")
 
 info = ttk.Label(root, text="24.09.2024, 19:15")
-deleteButton = ttk.Button(root, text="Usuń")
-saveButton = ttk.Button(root, text="Zapisz")
+deleteButton = ttk.Button(root, image=deleteIcon)
+saveButton = ttk.Button(root, image=saveIcon)
+createButton = ttk.Button(root, image=createIcon)
 searchBar = ttk.Entry(root, width=25, font=font_placeholder)
 searchButton = ttk.Button(image=searchIcon)
 textBox = tk.Text(root, width=40, font=("Helvetica", 13))
@@ -42,13 +48,18 @@ searchBar.configure(foreground="gray")
 searchBar.bind("<FocusIn>", on_focus_in)
 searchBar.bind("<FocusOut>", on_focus_out)
 
+ToolTip(saveButton, msg="Zapisz", delay=0.75)
+ToolTip(deleteButton, msg="Usuń", delay=0.75)
+ToolTip(createButton, msg="Nowy", delay=0.75)
+
 info.grid(column=0, row=0, pady=0, padx=10, sticky=tk.S)
-deleteButton.grid(column=1, row=0, pady=0, padx=0, sticky=tk.E)
-saveButton.grid(column=2, row=0, pady=0, padx=10, sticky=tk.E)
-searchBar.grid(column=3, row=0, pady=0, padx=5, sticky=tk.W)
-searchButton.grid(column=4, row=0, pady=0, padx=5, sticky=tk.E)
-textBox.grid(column=0, row=1, columnspan=3, pady=5, padx=10)
-listBox.grid(column=3, row=1, columnspan=2, pady=5, padx=5, sticky=tk.N)
+deleteButton.grid(column=1, row=0, columnspan=3, pady=0, padx=70, sticky=tk.E)
+saveButton.grid(column=2, row=0, columnspan=2, pady=0, padx=40, sticky=tk.E)
+createButton.grid(column=3, row=0, pady=0, padx=10, sticky=tk.E)
+searchBar.grid(column=4, row=0, pady=0, padx=5, sticky=tk.W)
+searchButton.grid(column=5, row=0, pady=0, padx=5, sticky=tk.E)
+textBox.grid(column=0, row=1, columnspan=4, pady=5, padx=10)
+listBox.grid(column=4, row=1, columnspan=2, pady=5, padx=5, sticky=tk.N)
 
 login_window = tk.Tk()
 login_window.title("Notatnik - logowanie")

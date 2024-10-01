@@ -94,7 +94,7 @@ class Database:
     def select_all_notes(self, user_id):
         self.create_database()
 
-        self.cursor.execute(f"SELECT * FROM note WHERE user_id LIKE '{user_id}'")
+        self.cursor.execute(f"SELECT * FROM note WHERE user_id LIKE '{user_id}' ORDER BY date DESC")
         return self.cursor.fetchall()
 
     def select_notes_by_date(self, user_id, date):
