@@ -2,24 +2,24 @@ import mysql.connector
 import time
 from configparser import ConfigParser
 
-config = ConfigParser()
-
-config.read('config.ini')
-database_host = config.get('DATABASE', 'host')
-database_user = config.get('DATABASE', 'user')
-database_password = config.get('DATABASE', 'password')
-database_name = config.get('DATABASE', 'name')
-
 
 class Database:
-    def __init__(self, name):
+    def __init__(self):
+        config = ConfigParser()
+
+        config.read('config.ini')
+        database_host = config.get('DATABASE', 'host')
+        database_user = config.get('DATABASE', 'user')
+        database_password = config.get('DATABASE', 'password')
+        database_name = config.get('DATABASE', 'name')
+
         db = mysql.connector.connect(
             host=database_host,
             user=database_user,
             password=database_password
         )
         cursor = db.cursor()
-        cursor.execute(f"CREATE DATABASE IF NOT EXISTS {name}")
+        cursor.execute(f"CREATE DATABASE IF NOT EXISTS {database_name}")
         cursor.close()
         db.close()
 
@@ -27,7 +27,7 @@ class Database:
             host=database_host,
             user=database_user,
             password=database_password,
-            database=name
+            database=database_name
         )
         self.cursor = self.db.cursor(buffered=True)
 
@@ -112,7 +112,7 @@ class Database:
 
 
 if __name__ == '__main__':
-    Base = Database(database_name)
+    Base = Database()
 
     user_id = None
     user_username = None
