@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import ttk, font
 from tktooltip import ToolTip
 import database
+import user
 
 
 def on_focus_in(event):
@@ -27,6 +28,7 @@ def register():
         if query_create == "success":
             login_window.destroy()
             root.deiconify()
+            get_notes()
         elif query_create == "username_taken":
             text = "Konto już istnieje"
             error_label.config(text=text)
@@ -44,18 +46,29 @@ def login():
             text = "Błędne dane"
             error_label.config(text=text)
         else:
-            user_id = query_login[0]
-            user_username = query_login[1]
-            user_password = query_login[2]
-            print("Zalogowano pomyślnie")
+            user.id = query_login[0]
+            user.login = query_login[1]
+            print("Zalogowano pomyślnie " + str(user.id))
             login_window.destroy()
             root.deiconify()
+            get_notes()
+
+def get_notes():
+    uid = user.id
+    query = Base.select_all_notes(uid)
+    if len(query) == 0:
+        list_box.insert("end", "Brak notatek")
+    else:
+        for row in query:
+            date = str(row[3].strftime("%d.%m.%Y"))
+            if len(row[2]) > 20:
+                list_box.insert("end", row[2][0:20] + "... " + date)
+            else:
+                list_box.insert("end", row[2] + " " + date)
 
 
 Base = database.Database()
-user_id = None
-user_username = None
-user_password = None
+user = user.User
 
 root = tk.Tk()
 root.title("Notatnik")
@@ -82,8 +95,6 @@ search_bar = ttk.Entry(root, width=25, font=font_placeholder)
 search_button = ttk.Button(image=search_icon)
 text_box = tk.Text(root, width=40, font=("Helvetica", 13))
 list_box = tk.Listbox(root, width=30, font=font)
-for x in range(20):
-    list_box.insert("end", x + 1)
 
 search_bar.insert(0, "szukaj")
 search_bar.configure(foreground="gray")
