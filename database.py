@@ -104,10 +104,10 @@ class Database:
                             (user_id, date))
         return self.cursor.fetchall()
 
-    def search(self, phrase):
+    def search(self, user_id, phrase):
         self.create_database()
 
-        self.cursor.execute(f"SELECT * FROM note WHERE content LIKE '%{phrase}%'")
+        self.cursor.execute(f"SELECT * FROM note WHERE content LIKE '%{phrase}%' AND user_id = {user_id}")
         return self.cursor.fetchall()
 
 

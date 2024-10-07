@@ -28,7 +28,7 @@ def register():
         if query_create == "success":
             login_window.destroy()
             root.deiconify()
-            get_notes()
+            get_notes(Base.select_all_notes(user.id))
         elif query_create == "username_taken":
             text = "Konto już istnieje"
             error_label.config(text=text)
@@ -51,20 +51,42 @@ def login():
             print("Zalogowano pomyślnie " + str(user.id))
             login_window.destroy()
             root.deiconify()
-            get_notes()
+            get_notes(Base.select_all_notes(user.id))
 
-def get_notes():
-    uid = user.id
-    query = Base.select_all_notes(uid)
+
+def get_notes(query):
+    listbox.delete(0, 10)
     if len(query) == 0:
-        list_box.insert("end", "Brak notatek")
+        listbox.insert("end", "Brak notatek")
+        listbox.configure(state="disabled")
     else:
         for row in query:
             date = str(row[3].strftime("%d.%m.%Y"))
             if len(row[2]) > 20:
-                list_box.insert("end", row[2][0:20] + "... " + date)
+                listbox.insert("end", row[2][0:20] + "... " + date)
             else:
-                list_box.insert("end", row[2] + " " + date)
+                listbox.insert("end", row[2] + " " + date)
+            listbox.configure(state="normal")
+
+
+def display_note(event):
+    text_box.delete(1.0, tk.END)
+    selected_note = listbox.curselection()
+    query = Base.select_all_notes(user.id)
+    row = query[selected_note[0]]
+    text_box.insert(tk.END, row[2])
+    date = str(row[3].strftime("%d.%m.%Y, %H:%M"))
+    info.config(text=date)
+
+
+def search():
+    phrase = search_bar.get()
+    if phrase != "szukaj":
+        query = Base.search(user.id, phrase)
+        get_notes(query)
+    else:
+        query = Base.select_all_notes(user.id)
+        get_notes(query)
 
 
 Base = database.Database()
@@ -87,19 +109,21 @@ font = ("Helvetica", 11)
 font_header = ("Helvetica", 14, "bold")
 font_placeholder = ("Helvetica", 11, "italic")
 
-info = ttk.Label(root, text="24.09.2024, 19:15")
+info = ttk.Label(root)
 delete_button = ttk.Button(root, image=delete_icon)
 save_button = ttk.Button(root, image=save_icon)
 create_button = ttk.Button(root, image=create_icon)
 search_bar = ttk.Entry(root, width=25, font=font_placeholder)
-search_button = ttk.Button(image=search_icon)
-text_box = tk.Text(root, width=40, font=("Helvetica", 13))
-list_box = tk.Listbox(root, width=30, font=font)
+search_button = ttk.Button(image=search_icon, command=search)
+text_box = tk.Text(root, width=40, font=("Helvetica", 13), wrap="word", relief="groove")
+listbox = tk.Listbox(root, width=30, font=font)
 
 search_bar.insert(0, "szukaj")
 search_bar.configure(foreground="gray")
 search_bar.bind("<FocusIn>", on_focus_in)
 search_bar.bind("<FocusOut>", on_focus_out)
+
+listbox.bind("<<ListboxSelect>>", display_note)
 
 ToolTip(save_button, msg="Zapisz", delay=0.75)
 ToolTip(delete_button, msg="Usuń", delay=0.75)
@@ -112,7 +136,7 @@ create_button.grid(column=3, row=0, pady=0, padx=10, sticky=tk.E)
 search_bar.grid(column=4, row=0, pady=0, padx=5, sticky=tk.W)
 search_button.grid(column=5, row=0, pady=0, padx=5, sticky=tk.E)
 text_box.grid(column=0, row=1, columnspan=4, pady=5, padx=10)
-list_box.grid(column=4, row=1, columnspan=2, pady=5, padx=5, sticky=tk.N)
+listbox.grid(column=4, row=1, columnspan=2, pady=5, padx=5, sticky=tk.N)
 
 login_window = tk.Toplevel()
 login_window.title("Notatnik - logowanie")
