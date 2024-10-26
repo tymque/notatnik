@@ -15,7 +15,7 @@ def on_focus_out(event):
     if search_bar.get() == "":
         search_bar.insert(0, "szukaj")
         search_bar.configure(foreground="gray", font=font_placeholder)
-        get_notes(Base.select_all_notes(user.id))
+        get_notes(Base.select_all_notes(User.id))
 
 
 def register():
@@ -47,12 +47,12 @@ def login():
             text = "Błędne dane"
             error_label.config(text=text)
         else:
-            user.id = query_login[0]
-            user.login = query_login[1]
-            print("Zalogowano pomyślnie " + str(user.id))
+            User.id = query_login[0]
+            User.login = query_login[1]
+            print("Zalogowano pomyślnie " + str(User.id))
             login_window.destroy()
             root.deiconify()
-            get_notes(Base.select_all_notes(user.id))
+            get_notes(Base.select_all_notes(User.id))
 
 
 def get_notes(query):
@@ -73,25 +73,49 @@ def get_notes(query):
 def display_note(event):
     text_box.delete(1.0, tk.END)
     selected_note = listbox.curselection()
-    query = Base.select_all_notes(user.id)
+    query = Base.select_all_notes(User.id)
     row = query[selected_note[0]]
     text_box.insert(tk.END, row[2])
     date = str(row[3].strftime("%d.%m.%Y, %H:%M"))
     info.config(text=date)
 
 
+def delete_note():
+    selected_note = listbox.curselection()
+    query = Base.select_all_notes(User.id)
+    row = query[selected_note[0]]
+    Base.delete_note(row[0])
+    text_box.delete("1.0", tk.END)
+    info.config(text="")
+    get_notes(Base.select_all_notes(User.id))
+
+
+def create_note():
+    Base.create_note(User.id, "Nowa notatka")
+    get_notes(Base.select_all_notes(User.id))
+
+
+def edit_note():
+    selected_note = listbox.curselection()
+    content = text_box.get("1.0", tk.END)
+    query = Base.select_all_notes(User.id)
+    row = query[selected_note[0]]
+    Base.edit_note(row[0], content)
+    get_notes(Base.select_all_notes(User.id))
+
+
 def search():
     phrase = search_bar.get()
     if phrase != "szukaj":
-        query = Base.search(user.id, phrase)
+        query = Base.search(User.id, phrase)
         get_notes(query)
     else:
-        query = Base.select_all_notes(user.id)
+        query = Base.select_all_notes(User.id)
         get_notes(query)
 
 
 Base = database.Database()
-user = user.User
+User = user.User
 
 root = tk.Tk()
 root.title("Notatnik")
@@ -111,9 +135,9 @@ font_header = ("Helvetica", 14, "bold")
 font_placeholder = ("Helvetica", 11, "italic")
 
 info = ttk.Label(root)
-delete_button = ttk.Button(root, image=delete_icon)
-save_button = ttk.Button(root, image=save_icon)
-create_button = ttk.Button(root, image=create_icon)
+delete_button = ttk.Button(root, image=delete_icon, command=delete_note)
+save_button = ttk.Button(root, image=save_icon, command=edit_note)
+create_button = ttk.Button(root, image=create_icon, command=create_note)
 search_bar = ttk.Entry(root, width=25, font=font_placeholder)
 search_button = ttk.Button(image=search_icon, command=search)
 text_box = tk.Text(root, width=40, font=("Helvetica", 13), wrap="word", relief="groove")
@@ -130,7 +154,7 @@ ToolTip(save_button, msg="Zapisz", delay=0.75)
 ToolTip(delete_button, msg="Usuń", delay=0.75)
 ToolTip(create_button, msg="Nowy", delay=0.75)
 
-info.grid(column=0, row=0, pady=0, padx=10, sticky=tk.S)
+info.grid(column=0, row=0, pady=0, padx=10, sticky=tk.W)
 delete_button.grid(column=1, row=0, columnspan=3, pady=0, padx=70, sticky=tk.E)
 save_button.grid(column=2, row=0, columnspan=2, pady=0, padx=40, sticky=tk.E)
 create_button.grid(column=3, row=0, pady=0, padx=10, sticky=tk.E)
@@ -155,6 +179,8 @@ pass_entry = ttk.Entry(login_window, font=font)
 login_button = ttk.Button(login_window, text="Zaloguj", command=login)
 register_button = ttk.Button(login_window, text="Zarejestruj", command=register)
 error_label = ttk.Label(login_window, font=font, foreground="red")
+
+login_window.bind("<Return>", lambda x: login())
 
 label.grid(column=0, row=0, columnspan=2, pady=10, padx=150)
 login_label.grid(column=0, row=1, pady=5, padx=5, sticky=tk.E)
