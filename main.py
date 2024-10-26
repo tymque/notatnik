@@ -15,6 +15,7 @@ def on_focus_out(event):
     if search_bar.get() == "":
         search_bar.insert(0, "szukaj")
         search_bar.configure(foreground="gray", font=font_placeholder)
+        get_notes(Base.select_all_notes(user.id))
 
 
 def register():
@@ -55,7 +56,8 @@ def login():
 
 
 def get_notes(query):
-    listbox.delete(0, 10)
+    listbox.configure(state="normal")
+    listbox.delete(0, tk.END)
     if len(query) == 0:
         listbox.insert("end", "Brak notatek")
         listbox.configure(state="disabled")
@@ -66,7 +68,6 @@ def get_notes(query):
                 listbox.insert("end", row[2][0:20] + "... " + date)
             else:
                 listbox.insert("end", row[2] + " " + date)
-            listbox.configure(state="normal")
 
 
 def display_note(event):
