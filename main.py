@@ -6,13 +6,13 @@ import user
 import note
 
 
-def on_focus_in(event):
+def on_searchbar_focus_in(search_bar):
     if search_bar.get() == "szukaj":
         search_bar.delete(0, tk.END)
         search_bar.configure(foreground="black", font=font)
 
 
-def on_focus_out(event):
+def on_searchbar_focus_out(search_bar):
     if search_bar.get() == "":
         search_bar.insert(0, "szukaj")
         search_bar.configure(foreground="gray", font=font_placeholder)
@@ -25,11 +25,10 @@ def register():
         text = "Wypełnij pola"
         error_label.config(text=text)
     else:
-        query_create = Base.create_user(un, pw)
+        query_create = db.create_user(un, pw)
         if query_create == "success":
             login_window.destroy()
-            root.deiconify()
-            get_notes(Base.select_all_notes(User.id))
+            main_window()
         elif query_create == "username_taken":
             text = "Konto już istnieje"
             error_label.config(text=text)
@@ -42,20 +41,19 @@ def login():
         text = "Wypełnij pola"
         error_label.config(text=text)
     else:
-        query_login = Base.login(un, pw)
+        query_login = db.login(un, pw)
         if query_login is None:
             text = "Błędne dane"
             error_label.config(text=text)
         else:
-            User.id = query_login[0]
-            User.login = query_login[1]
-            print("Zalogowano pomyślnie " + str(User.id))
+            user.id = query_login[0]
+            user.login = query_login[1]
+            print("Zalogowano pomyślnie " + str(user.id))
             login_window.destroy()
-            root.deiconify()
-            get_notes(Base.select_all_notes(User.id))
+            main_window()
 
 
-def get_notes(query):
+def get_notes(query, listbox):
     listbox.configure(state="normal")
     listbox.delete(0, tk.END)
     if len(query) == 0:
@@ -70,113 +68,119 @@ def get_notes(query):
                 listbox.insert("end", row[2] + " " + date)
 
 
-def get_note_data():
+def get_note_data(listbox, delete_button, save_button, text_box, date):
     selected_note = listbox.curselection()
-    query = Base.select_all_notes(User.id)
+    query = db.select_all_notes(user.id)
     row = query[selected_note[0]]
     note.id = row[0]
     note.content = row[2]
     note.date = str(row[3].strftime("%d.%m.%Y, %H:%M"))
-    display_data()
+    delete_button.config(state=tk.NORMAL)
+    save_button.config(state=tk.NORMAL)
+    display_data(text_box, date)
 
 
-def display_data():
-    clear_data()
+def display_data(text_box, date):
+    clear_data(text_box, date)
     text_box.insert(tk.END, note.content)
-    info.config(text=note.date)
+    date.config(text=note.date)
 
 
-def clear_data():
+def clear_data(text_box, date):
     text_box.delete("1.0", tk.END)
-    info.config(text="")
+    date.config(text="")
 
 
-def delete_note():
-    Base.delete_note(note.id)
-    clear_data()
-    get_notes(Base.select_all_notes(User.id))
+def delete_note(text_box, date, listbox):
+    db.delete_note(note.id)
+    clear_data(text_box, date)
+    get_notes(db.select_all_notes(user.id), listbox)
 
 
-def create_note():
-    Base.create_note(User.id, "Nowa notatka")
-    get_notes(Base.select_all_notes(User.id))
+def create_note(listbox):
+    db.create_note(user.id, "Nowa notatka")
+    get_notes(db.select_all_notes(user.id), listbox)
 
 
-def edit_note():
+def edit_note(text_box, listbox, date):
     new_content = text_box.get("1.0", tk.END).strip()
-    Base.edit_note(note.id, new_content)
-    get_notes(Base.select_all_notes(User.id))
-    query = Base.select_note_by_id(User.id, note.id)
-    note.date = str(query[0][3].strftime("%d.%m.%Y, %H:%M"))
-    display_data()
+    db.edit_note(note.id, new_content)
+    get_notes(db.select_all_notes(user.id), listbox)
+    listbox.select_set(0)
+    listbox.event_generate("<<ListboxSelect>>")
+    display_data(text_box, date)
 
 
-def search(event):
+def search(search_bar, delete_button, save_button, listbox, text_box, date):
     phrase = search_bar.get()
     if phrase != "szukaj":
-        query = Base.search(User.id, phrase)
-        get_notes(query)
+        query = db.search(user.id, phrase)
+        get_notes(query, listbox)
     else:
-        query = Base.select_all_notes(User.id)
-        get_notes(query)
+        query = db.select_all_notes(user.id)
+        get_notes(query, listbox)
+    delete_button.config(state=tk.DISABLED)
+    save_button.config(state=tk.DISABLED)
+    clear_data(text_box, date)
 
 
-Base = database.Database()
-User = user.User(-1, "")
+def main_window(tkfont=font):
+    root = tk.Tk()
+    root.title("Notatnik")
+    root.iconbitmap("notepad_icon.ico")
+    root.geometry("655x700")
+    root.resizable(False, False)
+    root.defaultFont = tkfont.nametofont("TkDefaultFont")
+    root.defaultFont.configure(family="Helvetica", size=11)
+
+    save_icon = tk.PhotoImage(file=r"./icons/save.png")
+    delete_icon = tk.PhotoImage(file=r"./icons/delete.png")
+    create_icon = tk.PhotoImage(file=r"./icons/new.png")
+
+    date = ttk.Label(root)
+    delete_button = ttk.Button(root, image=delete_icon, command=delete_note)
+    save_button = ttk.Button(root, image=save_icon, command=edit_note)
+    create_button = ttk.Button(root, image=create_icon, command=create_note)
+    search_bar = ttk.Entry(root, width=30, font=font_placeholder)
+    text_box = tk.Text(root, width=40, height=25, font=("Helvetica", 13), wrap="word", relief="solid")
+    listbox = tk.Listbox(root, width=30, height=25, font=font, exportselection=False)
+
+    search_bar.insert(0, "szukaj")
+    search_bar.configure(foreground="gray")
+    search_bar.bind("<FocusIn>", lambda x: on_searchbar_focus_in(search_bar))
+    search_bar.bind("<FocusOut>", lambda x: on_searchbar_focus_out(search_bar))
+    search_bar.bind("<KeyRelease>", lambda x: search(search_bar, delete_button, save_button, listbox, text_box, date))
+
+    listbox.bind("<<ListboxSelect>>", lambda x: get_note_data(listbox, delete_button, save_button, text_box, date))
+
+    ToolTip(save_button, msg="Zapisz", delay=0.75)
+    ToolTip(delete_button, msg="Usuń", delay=0.75)
+    ToolTip(create_button, msg="Nowy", delay=0.75)
+
+    date.grid(column=0, row=0, pady=0, padx=10, sticky=tk.W)
+    delete_button.grid(column=1, row=0, columnspan=3, pady=0, padx=70, sticky=tk.E)
+    save_button.grid(column=2, row=0, columnspan=2, pady=0, padx=40, sticky=tk.E)
+    create_button.grid(column=3, row=0, pady=0, padx=10, sticky=tk.E)
+    search_bar.grid(column=4, row=0, pady=0, padx=5, sticky=tk.W)
+    text_box.grid(column=0, row=1, columnspan=4, pady=5, padx=10)
+    listbox.grid(column=4, row=1, pady=5, padx=5, sticky=tk.N)
+
+    get_notes(db.select_all_notes(user.id), listbox)
+    root.mainloop()
+
+
+db = database.Database()
+user = user.User(-1, "")
 note = note.Note()
-
-root = tk.Tk()
-root.title("Notatnik")
-root.iconbitmap("notepad_icon.ico")
-root.geometry("655x700")
-root.resizable(False, False)
-root.defaultFont = font.nametofont("TkDefaultFont")
-root.defaultFont.configure(family="Helvetica", size=11)
-
-search_icon = tk.PhotoImage(file=r"./icons/search.png")
-save_icon = tk.PhotoImage(file=r"./icons/save.png")
-delete_icon = tk.PhotoImage(file=r"./icons/delete.png")
-create_icon = tk.PhotoImage(file=r"./icons/new.png")
 
 font = ("Helvetica", 11)
 font_header = ("Helvetica", 14, "bold")
 font_placeholder = ("Helvetica", 11, "italic")
 
-info = ttk.Label(root)
-delete_button = ttk.Button(root, image=delete_icon, command=delete_note)
-save_button = ttk.Button(root, image=save_icon, command=edit_note)
-create_button = ttk.Button(root, image=create_icon, command=create_note)
-search_bar = ttk.Entry(root, width=25, font=font_placeholder)
-search_button = ttk.Button(image=search_icon, command=search)
-text_box = tk.Text(root, width=40, font=("Helvetica", 13), wrap="word", relief="solid")
-listbox = tk.Listbox(root, width=30, font=font, exportselection=False)
-
-search_bar.insert(0, "szukaj")
-search_bar.configure(foreground="gray")
-search_bar.bind("<FocusIn>", on_focus_in)
-search_bar.bind("<FocusOut>", on_focus_out)
-search_bar.bind("<KeyRelease>", search)
-
-listbox.bind("<<ListboxSelect>>", lambda x: get_note_data())
-
-ToolTip(save_button, msg="Zapisz", delay=0.75)
-ToolTip(delete_button, msg="Usuń", delay=0.75)
-ToolTip(create_button, msg="Nowy", delay=0.75)
-
-info.grid(column=0, row=0, pady=0, padx=10, sticky=tk.W)
-delete_button.grid(column=1, row=0, columnspan=3, pady=0, padx=70, sticky=tk.E)
-save_button.grid(column=2, row=0, columnspan=2, pady=0, padx=40, sticky=tk.E)
-create_button.grid(column=3, row=0, pady=0, padx=10, sticky=tk.E)
-search_bar.grid(column=4, row=0, pady=0, padx=5, sticky=tk.W)
-search_button.grid(column=5, row=0, pady=0, padx=5, sticky=tk.E)
-text_box.grid(column=0, row=1, columnspan=4, pady=5, padx=10)
-listbox.grid(column=4, row=1, columnspan=2, pady=5, padx=5, sticky=tk.N)
-
-login_window = tk.Toplevel()
+login_window = tk.Tk()
 login_window.title("Notatnik - logowanie")
 login_window.iconbitmap("notepad_icon.ico")
 login_window.geometry("400x200")
-login_window.protocol('WM_DELETE_WINDOW', root.quit)
 login_window.resizable(False, False)
 
 
@@ -200,6 +204,5 @@ login_button.grid(column=1, row=3, pady=5, padx=5)
 register_button.grid(column=0, row=3, columnspan=2, pady=5, padx=91, sticky=tk.W)
 error_label.grid(column=1, row=4, pady=5, padx=15, sticky=tk.W)
 
-root.withdraw()
+
 login_window.mainloop()
-root.mainloop()
