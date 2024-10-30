@@ -3,6 +3,7 @@ from tkinter import ttk, font
 from tktooltip import ToolTip
 import database
 import user
+import note
 
 
 def on_focus_in(event):
@@ -15,7 +16,6 @@ def on_focus_out(event):
     if search_bar.get() == "":
         search_bar.insert(0, "szukaj")
         search_bar.configure(foreground="gray", font=font_placeholder)
-        get_notes(Base.select_all_notes(User.id))
 
 
 def register():
@@ -29,7 +29,7 @@ def register():
         if query_create == "success":
             login_window.destroy()
             root.deiconify()
-            get_notes(Base.select_all_notes(user.id))
+            get_notes(Base.select_all_notes(User.id))
         elif query_create == "username_taken":
             text = "Konto już istnieje"
             error_label.config(text=text)
@@ -70,23 +70,30 @@ def get_notes(query):
                 listbox.insert("end", row[2] + " " + date)
 
 
-def display_note(event):
-    text_box.delete(1.0, tk.END)
+def get_note_data():
     selected_note = listbox.curselection()
     query = Base.select_all_notes(User.id)
     row = query[selected_note[0]]
-    text_box.insert(tk.END, row[2])
-    date = str(row[3].strftime("%d.%m.%Y, %H:%M"))
-    info.config(text=date)
+    note.id = row[0]
+    note.content = row[2]
+    note.date = str(row[3].strftime("%d.%m.%Y, %H:%M"))
+    display_data()
+
+
+def display_data():
+    clear_data()
+    text_box.insert(tk.END, note.content)
+    info.config(text=note.date)
+
+
+def clear_data():
+    text_box.delete("1.0", tk.END)
+    info.config(text="")
 
 
 def delete_note():
-    selected_note = listbox.curselection()
-    query = Base.select_all_notes(User.id)
-    row = query[selected_note[0]]
-    Base.delete_note(row[0])
-    text_box.delete("1.0", tk.END)
-    info.config(text="")
+    Base.delete_note(note.id)
+    clear_data()
     get_notes(Base.select_all_notes(User.id))
 
 
@@ -96,15 +103,15 @@ def create_note():
 
 
 def edit_note():
-    selected_note = listbox.curselection()
-    content = text_box.get("1.0", tk.END)
-    query = Base.select_all_notes(User.id)
-    row = query[selected_note[0]]
-    Base.edit_note(row[0], content)
+    new_content = text_box.get("1.0", tk.END).strip()
+    Base.edit_note(note.id, new_content)
     get_notes(Base.select_all_notes(User.id))
+    query = Base.select_note_by_id(User.id, note.id)
+    note.date = str(query[0][3].strftime("%d.%m.%Y, %H:%M"))
+    display_data()
 
 
-def search():
+def search(event):
     phrase = search_bar.get()
     if phrase != "szukaj":
         query = Base.search(User.id, phrase)
@@ -115,7 +122,8 @@ def search():
 
 
 Base = database.Database()
-User = user.User
+User = user.User(-1, "")
+note = note.Note()
 
 root = tk.Tk()
 root.title("Notatnik")
@@ -140,15 +148,16 @@ save_button = ttk.Button(root, image=save_icon, command=edit_note)
 create_button = ttk.Button(root, image=create_icon, command=create_note)
 search_bar = ttk.Entry(root, width=25, font=font_placeholder)
 search_button = ttk.Button(image=search_icon, command=search)
-text_box = tk.Text(root, width=40, font=("Helvetica", 13), wrap="word", relief="groove")
-listbox = tk.Listbox(root, width=30, font=font)
+text_box = tk.Text(root, width=40, font=("Helvetica", 13), wrap="word", relief="solid")
+listbox = tk.Listbox(root, width=30, font=font, exportselection=False)
 
 search_bar.insert(0, "szukaj")
 search_bar.configure(foreground="gray")
 search_bar.bind("<FocusIn>", on_focus_in)
 search_bar.bind("<FocusOut>", on_focus_out)
+search_bar.bind("<KeyRelease>", search)
 
-listbox.bind("<<ListboxSelect>>", display_note)
+listbox.bind("<<ListboxSelect>>", lambda x: get_note_data())
 
 ToolTip(save_button, msg="Zapisz", delay=0.75)
 ToolTip(delete_button, msg="Usuń", delay=0.75)

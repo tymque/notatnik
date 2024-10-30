@@ -97,11 +97,11 @@ class Database:
         self.cursor.execute(f"SELECT * FROM note WHERE user_id LIKE '{user_id}' ORDER BY date DESC")
         return self.cursor.fetchall()
 
-    def select_notes_by_date(self, user_id, date):
+    def select_note_by_id(self, user_id, id):
         self.create_database()
 
-        self.cursor.execute("SELECT * FROM note WHERE user_id LIKE '%s' AND date = %s",
-                            (user_id, date))
+        self.cursor.execute("SELECT * FROM note WHERE user_id = %s AND id = %s",
+                            (user_id, id))
         return self.cursor.fetchall()
 
     def search(self, user_id, phrase):
