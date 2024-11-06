@@ -5,6 +5,7 @@ from configparser import ConfigParser
 
 class Database:
     def __init__(self):
+        self.error = False
         config = ConfigParser()
 
         config.read('config.ini')
@@ -13,23 +14,26 @@ class Database:
         database_password = config.get('DATABASE', 'password')
         database_name = config.get('DATABASE', 'name')
 
-        db = mysql.connector.connect(
-            host=database_host,
-            user=database_user,
-            password=database_password
-        )
-        cursor = db.cursor()
-        cursor.execute(f"CREATE DATABASE IF NOT EXISTS {database_name}")
-        cursor.close()
-        db.close()
+        try:
+            db = mysql.connector.connect(
+                host=database_host,
+                user=database_user,
+                password=database_password
+            )
+            cursor = db.cursor()
+            cursor.execute(f"CREATE DATABASE IF NOT EXISTS {database_name}")
+            cursor.close()
+            db.close()
 
-        self.db = mysql.connector.connect(
-            host=database_host,
-            user=database_user,
-            password=database_password,
-            database=database_name
-        )
-        self.cursor = self.db.cursor(buffered=True)
+            self.db = mysql.connector.connect(
+                host=database_host,
+                user=database_user,
+                password=database_password,
+                database=database_name
+            )
+            self.cursor = self.db.cursor(buffered=True)
+        except mysql.connector.Error:
+            self.error = True
 
     def create_database(self):
         self.cursor.execute('''CREATE TABLE IF NOT EXISTS user(
@@ -50,16 +54,19 @@ class Database:
         self.db.commit()
 
     def create_user(self, username, password):
-        self.create_database()
+        try:
+            self.create_database()
 
-        self.cursor.execute(f"SELECT * FROM user WHERE username LIKE '{username}'")
-        if self.cursor.rowcount == 0:
-            self.cursor.execute("INSERT INTO user VALUES (NULL, %s, SHA2(%s, 256))",
-                                (username, password))
-            self.db.commit()
-            return "success"
-        else:
-            return "username_taken"
+            self.cursor.execute(f"SELECT * FROM user WHERE username LIKE '{username}'")
+            if self.cursor.rowcount == 0:
+                self.cursor.execute("INSERT INTO user VALUES (NULL, %s, SHA2(%s, 256))",
+                                    (username, password))
+                self.db.commit()
+                return "success"
+            else:
+                return "username_taken"
+        except mysql.connector.Error:
+            self.error = True
 
     def delete_user(self, uid):
         self.cursor.execute(f"DELETE FROM note WHERE user_id = {uid}")
@@ -67,11 +74,14 @@ class Database:
         self.db.commit()
 
     def login(self, username, password):
-        self.create_database()
+        try:
+            self.create_database()
 
-        self.cursor.execute("SELECT * FROM user WHERE username = %s AND password = SHA2(%s, 256)",
-                            (username, password))
-        return self.cursor.fetchone()
+            self.cursor.execute("SELECT * FROM user WHERE username = %s AND password = SHA2(%s, 256)",
+                                (username, password))
+            return self.cursor.fetchone()
+        except mysql.connector.Error:
+            self.error = True
 
     def create_note(self, user_id, content):
         self.create_database()
