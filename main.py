@@ -1,6 +1,6 @@
 import tkinter as tk
 from tkinter import ttk, font
-from tktooltip import ToolTip
+from TkToolTip import ToolTip
 import database
 import user
 import note

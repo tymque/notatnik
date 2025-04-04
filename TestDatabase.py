@@ -1,7 +1,6 @@
 import unittest
-from unittest.mock import patch, MagicMock, call
-import mysql.connector
-from configparser import ConfigParser
+from unittest.mock import patch, MagicMock
+
 
 
 class TestDatabase(unittest.TestCase):
@@ -20,7 +19,6 @@ class TestDatabase(unittest.TestCase):
     def test_create_database(self):
         self.db.create_database()
 
-        # Normalizujemy zapytania SQL, aby usunąć zbędne spacje i nowe linie
         def normalize_sql(call):
             query_str = call.args[0] if isinstance(call.args[0], str) else call.args[0][0]
             return " ".join(query_str.split())
@@ -65,18 +63,18 @@ class TestDatabase(unittest.TestCase):
         result = self.db.login("wrong_user", "password123")
         self.assertIsNone(result)
 
-    def test_create_note_success(self):
+    def test_create_note(self):
         self.db.create_note(1, "Test note content")
         self.mock_cursor.execute.assert_called_with("INSERT INTO note VALUES (NULL, %s, %s, NULL)",
                                                     (1, "Test note content"))
         self.assertGreaterEqual(self.mock_db.commit.call_count, 1)
 
-    def test_edit_note_success(self):
+    def test_edit_note(self):
         self.db.edit_note(1, "Updated content")
         self.mock_cursor.execute.assert_called_with("UPDATE note SET content = %s, date = NULL WHERE id = %s", ("Updated content", 1))
         self.assertGreaterEqual(self.mock_db.commit.call_count, 1)
 
-    def test_delete_note_success(self):
+    def test_delete_note(self):
         self.db.delete_note(1)
         self.mock_cursor.execute.assert_called_with("DELETE FROM note WHERE id = 1")
         self.mock_db.commit.assert_called_once()
